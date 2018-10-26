@@ -5,18 +5,18 @@
 #include <ArduinoJson.h>
 
 // Your WiFi's SSID
-const char* WIFI_SSID = "";
+const char* WIFI_SSID = "Alwin iPhone Go";
 
 // Your WiFi's pasword
-const char* WIFI_PASS = "";
+const char* WIFI_PASS = "11223344";
 
 // Your Flex IoT device's serial number or mac.
-String DEVICE_SERIAL = "";
+String DEVICE_SERIAL = "2063393563351203";
 
 
 const char* MQTT_SERVER = "mqtt.flexiot.xl.co.id";
 // Your Event Topic
-const char* EVENT_TOPIC = "";
+const char* EVENT_TOPIC = "generic_brand_617generic_device3/common";
 
 String SUB_TOPIC = "genericDevice/" + DEVICE_SERIAL + "/+/sub";
 
@@ -95,7 +95,7 @@ void reconnect() {
 }
 
 void publishMessage(const char* message){
-  client.publish(EVENT_TOPIC,message);  
+  client.publish(EVENT_TOPIC, message, true);  
 }
 
 void sendPhotoTransistor() {
@@ -134,7 +134,7 @@ void loop() {
     }
 
     // update timer and send data
-    if (millis() - timeSendMillis >= interval) {
+    if (millis() - timeSendMillis >= interval && client.connected()) {
         timeSendMillis = millis();
         sendPhotoTransistor();
     }
