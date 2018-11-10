@@ -20,10 +20,11 @@ String DEVICE_SERIAL = "";
 const char *MQTT_SERVER = "mqtt.flexiot.xl.co.id";
 const char *MQTT_USER = "rabbit";
 const char *MQTT_PASS = "rabbit";
-const char *MQTT_ID = "YOUR_DEVICE_ID"; // NOTE: this value should be unique
+// TODO: Fill the MQTT_ID value with your unique device name!
+const char *MQTT_ID = "YOUR_DEVICE_ID";
 
 // FlexIoT Topics
-// TODO: edit the values of these variables, these values are just an example
+// TODO: edit the values of these variables, these values are just an example!
 const char *EVENT_TOPIC = "generic_brand_617generic_device3/common";
 String ACTION_TOPIC = "+/" + DEVICE_SERIAL + "/generic_brand_617/generic_device/3/sub";
 String ACTION_RESPONSE_TOPIC = "/generic_brand_617/generic_device/3/pub";
