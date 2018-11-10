@@ -5,141 +5,132 @@
 #include <ArduinoJson.h>
 
 // Your WiFi's SSID
-const char* WIFI_SSID = "Alwin iPhone Go";
+// TOOD: edit the variable's value below
+const char *WIFI_SSID = "";
 
 // Your WiFi's pasword
-const char* WIFI_PASS = "11223344";
+// TOOD: edit the variable's value below
+const char *WIFI_PASS = "";
 
 // Your Flex IoT device's serial number or mac.
-String DEVICE_SERIAL = "2063393563351203";
+// TOOD: edit the variable's value below
+String DEVICE_SERIAL = "";
 
+// MQTT server configuration
+const char *MQTT_SERVER = "mqtt.flexiot.xl.co.id";
+const char *MQTT_USER = "rabbit";
+const char *MQTT_PASS = "rabbit";
+const char *MQTT_ID = "YOUR_DEVICE_ID"; // NOTE: this value should be unique
 
-const char* MQTT_SERVER = "mqtt.flexiot.xl.co.id";
-// Your Event Topic
-const char* EVENT_TOPIC = "generic_brand_617generic_device3/common";
-
-String SUB_TOPIC = "genericDevice/" + DEVICE_SERIAL + "/+/sub";
+// FlexIoT Topics
+// TODO: edit the values of these variables, these values are just an example
+const char *EVENT_TOPIC = "generic_brand_617generic_device3/common";
+String ACTION_TOPIC = "+/" + DEVICE_SERIAL + "/generic_brand_617/generic_device/3/sub";
+String ACTION_RESPONSE_TOPIC = "/generic_brand_617/generic_device/3/pub";
 
 char msg[300];
-
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
-int interval = 10*1000;
-uint64_t timeSendMillis = 0;
-
 // connect to WiFi
-void setupWiFi() {
+void setupWifi()
+{
     // We start by connecting to a WiFi network
-    Serial.println();
-    Serial.print("Connecting to ");
+    delay(100);
+    Serial.print("\nConnecting to");
     Serial.println(WIFI_SSID);
-
     WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(100);
+        Serial.print("-");
     }
-
-    randomSeed(micros());
-
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-}
-
-void doActions(const char* message) {
-    Serial.println(message);
+    Serial.print("\nConnected to");
+    Serial.println(WIFI_SSID);
 }
 
 // MQTT client callback
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(SUB_TOPIC);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    msg[i] = (char)payload[i];
-  }
+void callback(char *topic, byte *payload, unsigned int length)
+{
+    Serial.print("Received messages; ");
+    Serial.println(topic);
 
-  doActions(msg);
+    int topicLen = strlen(topic);
+    String correlationId = "";
+
+    for (int i = 0; i < topicLen; i++)
+    {
+        if (topic[i] == '/')
+        {
+            break;
+        }
+
+        correlationId += topic[i];
+    }
+
+    for (int i = 0; i < length; i++)
+    {
+        Serial.print((char)payload[i]);
+    }
+
+    // TOOD: fill the action response value!
+    // e.g: String response = "{\"led\":\"1\"}";
+    String response = "";
+    String responseTopic = correlationId + ACTION_RESPONSE_TOPIC;
+
+    Serial.print("Publishing: ");
+    Serial.println(response);
+    Serial.print("Topic: ");
+    Serial.println(responseTopic);
+    client.publish(responseTopic.c_str(), response.c_str());
+
+    Serial.println();
 }
 
 // connect to MQTT broker.
-void reconnect() {
-    // Loop until we're reconnected
-    while (!client.connected()) {
-        Serial.print("Attempting MQTT connection...");
-        // Create a random client ID
-        String clientId = "ESP32Client-";
-        clientId += String(random(0xffff), HEX);
+void reconnect()
+{
+    while (!client.connected())
+    {
+        Serial.print("\nConnecting to");
+        Serial.println(MQTT_SERVER);
 
-        Serial.print("client ID=");
-        Serial.println(clientId);
-        // Attempt to connect
-        if (client.connect(clientId.c_str())) {
-            Serial.println("connected");
-            //subscribe to the topic
-            // const char* SUB_TOPIC = SUB_TOPIC.c_str();
-            client.subscribe(SUB_TOPIC.c_str());
-        } else {
-            Serial.print("failed, rc=");
-            Serial.print(client.state());
-            Serial.println(" try again in 5 seconds");
-            // Wait 5 seconds before retrying
+        if (client.connect(MQTT_ID, MQTT_USER, MQTT_PASS))
+        {
+            Serial.print("\nConnected to");
+            Serial.println(MQTT_SERVER);
+            client.subscribe(ACTION_TOPIC.c_str());
+        }
+        else
+        {
+            Serial.print("\nTrying connect again");
             delay(5000);
         }
     }
 }
 
-void publishMessage(const char* message){
-  client.publish(EVENT_TOPIC, message, true);  
-}
-
-void sendPhotoTransistor() {
-    float volt = ESPectro32.readPhotoTransistorVoltage();
-    DynamicJsonBuffer buffer;
-    JsonObject& root = buffer.createObject();
-    root["mac"] = DEVICE_SERIAL;
-    root["eventName"] = "phototransistor";
-    root["phototransistor"] = volt;
-    root["status"] = "none";
-
-    Serial.printf("Volt: %f\n", volt);
-
-    String payload;
-    root.printTo(payload);
-
-    Serial.println(payload);
-
-    publishMessage(payload.c_str());
-}
-
-void setup() {
+void setup()
+{
     Serial.begin(115200);
-    setupWiFi();
+    setupWifi();
     client.setServer(MQTT_SERVER, 1883);
     client.setCallback(callback);
 }
 
-void loop() {
-    if(WiFi.status() != WL_CONNECTED){
-        setupWiFi();  
-    }
-
-    if (WiFi.status()== WL_CONNECTED && !client.connected()) {
+void loop()
+{
+    if (!client.connected())
+    {
         reconnect();
     }
 
-    // update timer and send data
-    if (millis() - timeSendMillis >= interval && client.connected()) {
-        timeSendMillis = millis();
-        sendPhotoTransistor();
-    }
-
+    // TOOD: Fill your event message value!
+    // e.g: String message = "{\"eventName\":\"phototransistor\",\"status\":\"none\",\"phototransistor\":0.1395,\"mac\":\"\"}"";
+    String message = "";
+    Serial.print("Sending messages: ");
+    Serial.println(message);
+    client.publish(EVENT_TOPIC, message.c_str());
     client.loop();
+    delay(5000);
 }
-
-
