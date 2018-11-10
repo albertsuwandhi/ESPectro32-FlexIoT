@@ -77,7 +77,16 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     // TOOD: fill the action response value!
     // e.g: String response = "{\"led\":\"1\"}";
+
     String response = "";
+
+    // or easier with ArduinoJson as shown below
+    //
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.createObject();
+    // root["led"] = "1";
+    // root.printTo(response);
+
     String responseTopic = correlationId + ACTION_RESPONSE_TOPIC;
 
     Serial.print("Publishing: ");
@@ -129,6 +138,17 @@ void loop()
     // TOOD: Fill your event message value!
     // e.g: String message = "{\"eventName\":\"phototransistor\",\"status\":\"none\",\"phototransistor\":0.1395,\"mac\":\"\"}"";
     String message = "";
+
+    // or use ArduinoJson as shown below
+    //
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.createObject();
+    // root["eventName"] = "phototransistor";
+    // root["status"] = "none";
+    // root["phototransistor"] = 0.1;
+    // root["mac"] = DEVICE_SERIAL;
+    // root.printTo(message);
+
     Serial.print("Sending messages: ");
     Serial.println(message);
     client.publish(EVENT_TOPIC, message.c_str());
